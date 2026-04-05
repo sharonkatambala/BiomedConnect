@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BiomedConnect AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #f1f5f9;
+    --sidebar-bg: #ffffff;
+    --panel: #ffffff;
+    --border: rgba(15, 23, 42, 0.10);
+    --accent: #0d9488;
+    --accent2: #2563eb;
+    --accent3: #7c3aed;
+    --text: #0f172a;
+    --muted: #64748b;
+    --user-bubble: #e0f2fe;
+    --ai-bubble: #ffffff;
+    --glow: rgba(13, 148, 136, 0.15);
+    --glow2: rgba(37, 99, 235, 0.12);
+    --red: #dc2626;
+    --yellow: #ca8a04;
+    --radius: 18px;
+    --font-display: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-ui: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+    --sidebar-w: 270px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-ui);
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── SIDEBAR ──────────────────────────────────────────── */
+  .sidebar {
+    width: var(--sidebar-w);
+    background: var(--sidebar-bg);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 10;
+  }
+
+  .sidebar-logo {
+    padding: 24px 20px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .logo-badge { display: flex; align-items: center; gap: 10px; }
+  .logo-icon {
+    width: 38px; height: 38px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 0 18px var(--glow);
+  }
+  .logo-text {
+    font-family: var(--font-ui);
+    font-weight: 800;
+    font-size: 15px;
+    letter-spacing: -0.3px;
+    line-height: 1.1;
+  }
+  .logo-text span { color: var(--accent); }
+  .logo-sub {
+    font-size: 10px;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    margin-top: 2px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+  }
+
+  .new-chat-btn {
+    margin: 14px 14px 8px;
+    background: linear-gradient(135deg, rgba(13,148,136,0.12), rgba(37,99,235,0.08));
+    border: 1px solid rgba(13, 148, 136, 0.28);
+    color: var(--accent);
+    font-family: var(--font-ui);
+    font-weight: 700;
+    font-size: 13px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 8px;
+    transition: all 0.2s;
+    letter-spacing: 0.3px;
+  }
+  .new-chat-btn:hover {
+    background: linear-gradient(135deg, rgba(13,148,136,0.18), rgba(37,99,235,0.12));
+    box-shadow: 0 0 16px var(--glow);
+    transform: translateY(-1px);
+  }
+
+  .sidebar-section-label {
+    font-size: 10px;
+    font-family: var(--font-mono);
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    padding: 12px 18px 6px;
+  }
+
+  .chat-history {
+    flex: 1;
+    overflow-y: auto;
+    padding: 4px 8px;
+  }
+  .chat-history::-webkit-scrollbar { width: 4px; }
+  .chat-history::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .chat-item {
+    padding: 9px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 12.5px;
+    color: var(--muted);
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 2px;
+    transition: all 0.15s;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .chat-item:hover { background: rgba(15, 23, 42, 0.05); color: var(--text); }
+  .chat-item.active {
+    background: rgba(13, 148, 136, 0.10);
+    color: var(--accent);
+    border: 1px solid rgba(13, 148, 136, 0.22);
+  }
+  .chat-item-icon { opacity: 0.5; font-size: 13px; flex-shrink: 0; }
+
+  .sidebar-footer {
+    border-top: 1px solid var(--border);
+    padding: 14px;
+  }
+  .user-card {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .user-card:hover { background: rgba(15, 23, 42, 0.04); }
+  .user-avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent2), var(--accent3));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; color: white;
+    flex-shrink: 0;
+  }
+  .user-info { min-width: 0; }
+  .user-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .user-role { font-size: 10.5px; color: var(--muted); font-family: var(--font-mono); }
+
+  /* ── MAIN ─────────────────────────────────────────────── */
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Ambient background glows */
+  .main::before {
+    content: '';
+    position: absolute;
+    top: -100px; right: -100px;
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(13, 148, 136, 0.08) 0%, transparent 70%);
+    pointer-events: none; z-index: 0;
+  }
+  .main::after {
+    content: '';
+    position: absolute;
+    bottom: -80px; left: 30%;
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(37, 99, 235, 0.07) 0%, transparent 70%);
+    pointer-events: none; z-index: 0;
+  }
+
+  /* ── TOPBAR ───────────────────────────────────────────── */
+  .topbar {
+    padding: 16px 28px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    position: relative; z-index: 5;
+  }
+  .topbar-left { display: flex; align-items: center; gap: 12px; }
+  .topbar-title { font-size: 14px; font-weight: 700; color: var(--text); }
+  .topbar-subtitle { font-size: 11px; color: var(--muted); font-family: var(--font-mono); }
+  .status-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+    animation: pulse-dot 2s infinite;
+  }
+  @keyframes pulse-dot {
+    0%,100% { opacity: 1; box-shadow: 0 0 8px var(--accent); }
+    50% { opacity: 0.6; box-shadow: 0 0 16px var(--accent); }
+  }
+  .topbar-actions { display: flex; gap: 8px; }
+  .topbar-btn {
+    background: rgba(15, 23, 42, 0.04);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-family: var(--font-ui);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .topbar-btn:hover { color: var(--text); background: rgba(15, 23, 42, 0.07); }
+  .topbar-btn--key-needed {
+    color: var(--yellow);
+    border-color: rgba(202, 138, 4, 0.35);
+  }
+  .topbar-btn--accent-outline {
+    color: var(--accent);
+    border-color: rgba(13, 148, 136, 0.35);
+  }
+
+  /* ── MESSAGES AREA ────────────────────────────────────── */
+  .messages-area {
+    flex: 1; overflow-y: auto;
+    padding: 32px 0;
+    position: relative; z-index: 1;
+  }
+  .messages-area::-webkit-scrollbar { width: 5px; }
+  .messages-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .msg-wrapper {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 0 28px;
+  }
+
+  /* ── WELCOME SCREEN ───────────────────────────────────── */
+  .welcome-screen {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; text-align: center;
+    padding: 48px 28px 0;
+    animation: fadeUp 0.6s ease both;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .welcome-icon {
+    width: 72px; height: 72px;
+    background: linear-gradient(135deg, rgba(13,148,136,0.15), rgba(37,99,235,0.10));
+    border: 1px solid rgba(13, 148, 136, 0.28);
+    border-radius: 20px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px; margin-bottom: 22px;
+    box-shadow: 0 8px 32px rgba(15, 23, 42, 0.08);
+    animation: float 4s ease-in-out infinite;
+  }
+  @keyframes float {
+    0%,100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+  .welcome-title {
+    font-family: var(--font-display);
+    font-size: 36px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: var(--text);
+    margin-bottom: 10px;
+    background: linear-gradient(135deg, #0f172a 0%, var(--accent) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .welcome-desc {
+    font-size: 14px; color: var(--muted); max-width: 420px;
+    line-height: 1.7; margin-bottom: 36px;
+  }
+
+  .prompt-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 10px; width: 100%; max-width: 580px; margin-bottom: 24px;
+  }
+  .prompt-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 18px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s;
+    position: relative; overflow: hidden;
+  }
+  .prompt-card::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, var(--glow), transparent);
+    opacity: 0; transition: opacity 0.2s;
+  }
+  .prompt-card:hover {
+    border-color: rgba(13, 148, 136, 0.35);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+  }
+  .prompt-card:hover::before { opacity: 1; }
+  .prompt-card-icon { font-size: 20px; margin-bottom: 8px; }
+  .prompt-card-title { font-size: 12.5px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+  .prompt-card-desc { font-size: 11px; color: var(--muted); line-height: 1.5; }
+
+  /* ── MESSAGE BUBBLES ──────────────────────────────────── */
+  .message {
+    display: flex; gap: 14px; margin-bottom: 24px;
+    animation: msgIn 0.3s ease both;
+  }
+  @keyframes msgIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .message.user { flex-direction: row-reverse; }
+
+  .msg-avatar {
+    width: 34px; height: 34px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; flex-shrink: 0; margin-top: 2px;
+  }
+  .msg-avatar.ai {
+    background: linear-gradient(135deg, rgba(13,148,136,0.18), rgba(37,99,235,0.12));
+    border: 1px solid rgba(13, 148, 136, 0.25);
+  }
+  .msg-avatar.user-av {
+    background: linear-gradient(135deg, var(--accent2), var(--accent3));
+  }
+
+  .msg-body { max-width: 72%; }
+  .message.user .msg-body { align-items: flex-end; display: flex; flex-direction: column; }
+
+  .msg-role {
+    font-size: 10.5px; font-family: var(--font-mono);
+    color: var(--muted); margin-bottom: 5px;
+    text-transform: uppercase; letter-spacing: 0.8px;
+  }
+  .message.user .msg-role { text-align: right; }
+
+  .msg-bubble {
+    padding: 13px 17px;
+    border-radius: var(--radius);
+    font-size: 14px; line-height: 1.7;
+    position: relative;
+  }
+  .msg-bubble.ai-bubble {
+    background: var(--ai-bubble);
+    border: 1px solid var(--border);
+    border-top-left-radius: 4px;
+    color: var(--text);
+  }
+  .msg-bubble.user-bubble {
+    background: var(--user-bubble);
+    border: 1px solid rgba(59,139,255,0.2);
+    border-top-right-radius: 4px;
+    color: var(--text);
+  }
+  .msg-bubble strong { color: var(--accent); }
+  .msg-bubble code {
+    background: rgba(15, 23, 42, 0.06);
+    padding: 2px 6px; border-radius: 4px;
+    font-family: var(--font-mono); font-size: 12.5px;
+  }
+  .msg-bubble ul { padding-left: 18px; margin: 6px 0; }
+  .msg-bubble li { margin-bottom: 4px; }
+
+  /* ── TYPING INDICATOR ─────────────────────────────────── */
+  .typing-indicator {
+    display: flex; align-items: center; gap: 5px;
+    padding: 14px 17px;
+    background: var(--ai-bubble);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    border-top-left-radius: 4px;
+    width: fit-content;
+  }
+  .typing-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent);
+    animation: typing 1.2s infinite;
+  }
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes typing {
+    0%,60%,100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-6px); opacity: 1; }
+  }
+
+  /* ── INPUT AREA ───────────────────────────────────────── */
+  .input-area {
+    padding: 16px 28px 24px;
+    position: relative; z-index: 5;
+    background: linear-gradient(to top, var(--bg) 70%, transparent);
+  }
+  .input-container { max-width: 820px; margin: 0 auto; }
+  .input-box {
+    display: flex; align-items: flex-end; gap: 10px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 12px 14px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    position: relative;
+  }
+  .input-box:focus-within {
+    border-color: rgba(13, 148, 136, 0.45);
+    box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.10);
+  }
+  .input-box textarea {
+    flex: 1; background: transparent; border: none; outline: none;
+    color: var(--text); font-family: var(--font-ui); font-size: 14px;
+    resize: none; max-height: 160px; min-height: 22px;
+    line-height: 1.6;
+  }
+  .input-box textarea::placeholder { color: var(--muted); }
+
+  .send-btn {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: all 0.2s;
+    box-shadow: 0 4px 16px rgba(13, 148, 136, 0.25);
+    color: #ffffff; font-size: 16px;
+  }
+  .send-btn:hover { transform: scale(1.08); box-shadow: 0 6px 24px rgba(13, 148, 136, 0.35); }
+  .send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  .input-hint {
+    text-align: center; font-size: 11px;
+    color: var(--muted); margin-top: 10px;
+    font-family: var(--font-mono);
+  }
+
+  /* ── RAG BADGE ────────────────────────────────────────── */
+
+  /* ── MODE TABS ────────────────────────────────────────── */
+  .mode-tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+  .mode-tab {
+    font-size: 11.5px; font-family: var(--font-ui); font-weight: 600;
+    color: var(--muted); background: transparent;
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 5px 12px; cursor: pointer; transition: all 0.15s;
+    letter-spacing: 0.3px;
+  }
+  .mode-tab.active {
+    color: var(--accent); border-color: rgba(13, 148, 136, 0.35);
+    background: rgba(13, 148, 136, 0.08);
+  }
+  .mode-tab:hover:not(.active) { color: var(--text); border-color: rgba(15, 23, 42, 0.15); }
+
+  /* ── MODALS ───────────────────────────────────────────── */
+  .modal-bg {
+    position: fixed; inset: 0; background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(6px); z-index: 100;
+    display: flex; align-items: center; justify-content: center;
+    animation: fadeIn 0.3s ease;
+  }
+  @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+
+  .modal {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    padding: 36px 40px;
+    width: 100%; max-width: 400px;
+    position: relative;
+    box-shadow: 0 24px 64px rgba(15, 23, 42, 0.12);
+    animation: slideUp 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+  }
+  @keyframes slideUp {
+    from { opacity:0; transform: scale(0.92) translateY(20px); }
+    to { opacity:1; transform: none; }
+  }
+  .modal-close {
+    position: absolute; top: 16px; right: 18px;
+    background: none; border: none; color: var(--muted);
+    font-size: 20px; cursor: pointer; line-height: 1;
+    transition: color 0.15s;
+  }
+  .modal-close:hover { color: var(--text); }
+  .modal-title {
+    font-family: var(--font-display);
+    font-size: 26px; font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text); margin-bottom: 6px;
+  }
+  .modal-sub { font-size: 12.5px; color: var(--muted); margin-bottom: 28px; }
+  .form-group { margin-bottom: 16px; }
+  .form-label {
+    font-size: 11.5px; font-weight: 700; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.7px;
+    display: block; margin-bottom: 6px; font-family: var(--font-mono);
+  }
+  .form-input {
+    width: 100%;
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: var(--font-ui);
+    font-size: 14px;
+    padding: 10px 14px;
+    outline: none; transition: border-color 0.15s;
+  }
+  .form-input:focus { border-color: rgba(13, 148, 136, 0.45); }
+  .form-btn {
+    width: 100%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none; border-radius: 12px;
+    color: #ffffff; font-family: var(--font-ui);
+    font-weight: 800; font-size: 14px;
+    padding: 12px; cursor: pointer;
+    margin-top: 6px; transition: all 0.2s;
+    box-shadow: 0 4px 20px rgba(13, 148, 136, 0.25);
+  }
+  .form-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 28px rgba(13, 148, 136, 0.35); }
+  .form-btn--amber {
+    background: linear-gradient(135deg, #f59e0b, #ea580c) !important;
+    box-shadow: 0 4px 20px rgba(245, 158, 11, 0.35);
+  }
+  .form-btn--amber:hover {
+    box-shadow: 0 6px 28px rgba(245, 158, 11, 0.45);
+  }
+  .modal-toggle {
+    text-align: center; font-size: 12px; color: var(--muted);
+    margin-top: 18px;
+  }
+  .modal-toggle a {
+    color: var(--accent); cursor: pointer;
+    text-decoration: none; font-weight: 600;
+  }
+  .modal-toggle a:hover { text-decoration: underline; }
+
+  /* ── SCROLL BTN & UTILS ───────────────────────────────── */
+  .scroll-btn {
+    position: absolute; bottom: 100px; right: 28px;
+    background: var(--panel); border: 1px solid var(--border);
+    color: var(--muted); border-radius: 50%; width: 34px; height: 34px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 16px; transition: all 0.2s; z-index: 4;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+  }
+  .scroll-btn:hover { color: var(--text); border-color: rgba(13, 148, 136, 0.35); }
+  .hidden { display: none !important; }
+
+  .sidebar-api-row {
+    padding: 0 14px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-api-link {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-family: var(--font-ui);
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    padding: 2px 0;
+  }
+  .sidebar-api-link:hover { color: var(--accent); }
+
+  @media (max-width: 700px) {
+    .sidebar { display: none; }
+    .prompt-grid { grid-template-columns: 1fr; }
+    .welcome-title { font-size: 26px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════
+     SIDEBAR
+════════════════════════════════════════════════════════ -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-badge">
+      <div class="logo-icon">🧬</div>
+      <div>
+        <div class="logo-text">Biomed<span>Connect</span> AI</div>
+        <div class="logo-sub">Biomedical Intelligence</div>
+      </div>
+    </div>
+  </div>
+
+  <button class="new-chat-btn" onclick="newChat()">
+    <span>＋</span> New Conversation
+  </button>
+
+  <div class="sidebar-section-label">Recent Chats</div>
+  <div class="chat-history" id="chatHistory">
+    <!-- Rendered dynamically by JS from localStorage -->
+  </div>
+
+  <div class="sidebar-api-row">
+    <button type="button" class="sidebar-api-link" onclick="openApiKeyModal()">Groq API key</button>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="user-card" onclick="openModal('login')">
+      <div class="user-avatar">BM</div>
+      <div class="user-info">
+        <div class="user-name">Guest User</div>
+        <div class="user-role">Sign in to save chats</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- ═══════════════════════════════════════════════════════
+     MAIN CHAT AREA
+════════════════════════════════════════════════════════ -->
+<main class="main">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="status-dot"></div>
+      <div>
+        <div class="topbar-title">BiomedConnect AI Assistant</div>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <button type="button" class="topbar-btn topbar-btn--key-needed" id="apiKeyBtn"
+        onclick="openApiKeyModal()">
+        🔑 Set Groq Key
+      </button>
+      <button type="button" class="topbar-btn" onclick="openModal('login')">Sign In</button>
+      <button type="button" class="topbar-btn topbar-btn--accent-outline" onclick="openModal('register')">
+        Register
+      </button>
+    </div>
+  </div>
+
+  <!-- MESSAGES -->
+  <div class="messages-area" id="messagesArea">
+    <div class="msg-wrapper">
+
+      <!-- WELCOME SCREEN (hidden after first message) -->
+      <div class="welcome-screen" id="welcomeScreen">
+        <div class="welcome-icon">🧬</div>
+        <div class="welcome-title">Welcome to BiomedConnect AI</div>
+        <div class="welcome-desc">
+          Your intelligent assistant for biomedical engineering.<br/>
+          Ask questions, write reports, explain devices, troubleshoot equipment.
+        </div>
+
+        <div class="prompt-grid">
+          <div class="prompt-card"
+            onclick="usePrompt('Explain how an electrocardiogram (ECG) machine works and what each wave represents.')">
+            <div class="prompt-card-icon">🫀</div>
+            <div class="prompt-card-title">Explain a Medical Device</div>
+            <div class="prompt-card-desc">Get detailed breakdowns of medical equipment and biomedical systems.</div>
+          </div>
+          <div class="prompt-card"
+            onclick="usePrompt('Help me write a professional report on MRI technology, covering principles, clinical applications, and safety considerations.')">
+            <div class="prompt-card-icon">📝</div>
+            <div class="prompt-card-title">Write a Report</div>
+            <div class="prompt-card-desc">Academic and professional writing assistance for biomedical topics.</div>
+          </div>
+          <div class="prompt-card"
+            onclick="usePrompt('A patient ventilator is showing a high-pressure alarm. Walk me through the troubleshooting steps.')">
+            <div class="prompt-card-icon">🔧</div>
+            <div class="prompt-card-title">Troubleshoot Equipment</div>
+            <div class="prompt-card-desc">Step-by-step diagnostics for medical equipment issues.</div>
+          </div>
+          <div class="prompt-card"
+            onclick="usePrompt('Explain the biomedical engineering principles behind pacemakers and how they sense and treat arrhythmias.')">
+            <div class="prompt-card-icon">⚡</div>
+            <div class="prompt-card-title">Biomedical Concepts</div>
+            <div class="prompt-card-desc">Deep dives into physiology, engineering, and healthcare technology.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MESSAGES LIST (populated by JS) -->
+      <div id="messagesList"></div>
+
+      <!-- TYPING INDICATOR -->
+      <div class="message hidden" id="typingMsg">
+        <div class="msg-avatar ai">🧬</div>
+        <div class="msg-body">
+          <div class="msg-role">BiomedConnect AI</div>
+          <div class="typing-indicator">
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SCROLL TO BOTTOM BUTTON -->
+  <button class="scroll-btn hidden" id="scrollBtn" onclick="scrollToBottom()">↓</button>
+
+  <!-- INPUT AREA -->
+  <div class="input-area">
+    <div class="input-container">
+      <div class="mode-tabs">
+        <button class="mode-tab active" onclick="setMode(this,'general')">💬 General</button>
+        <button class="mode-tab" onclick="setMode(this,'report')">📝 Report Writing</button>
+        <button class="mode-tab" onclick="setMode(this,'device')">🩺 Device Explainer</button>
+        <button class="mode-tab" onclick="setMode(this,'troubleshoot')">🔧 Troubleshoot</button>
+      </div>
+      <div class="input-box">
+        <textarea id="chatInput" rows="1"
+          placeholder="Ask anything about biomedical engineering..."
+          onkeydown="handleKey(event)"
+          oninput="autoResize(this)"></textarea>
+        <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+      </div>
+      <div class="input-hint">
+        AI responses may be inaccurate. Verify important biomedical information.
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- ═══════════════════════════════════════════════════════
+     LOGIN / REGISTER MODAL
+════════════════════════════════════════════════════════ -->
+<div class="modal-bg hidden" id="modalBg" onclick="closeModalBg(event)">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+
+    <!-- LOGIN FORM -->
+    <div id="loginForm">
+      <div class="modal-title">Welcome back</div>
+      <div class="modal-sub">Sign in to save your conversations</div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input class="form-input" type="email" placeholder="you@university.edu" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-input" type="password" placeholder="••••••••" />
+      </div>
+      <button class="form-btn" onclick="fakeLogin()">Sign In</button>
+      <div class="modal-toggle">
+        Don't have an account? <a onclick="switchModal('register')">Register</a>
+      </div>
+    </div>
+
+    <!-- REGISTER FORM -->
+    <div id="registerForm" class="hidden">
+      <div class="modal-title">Create Account</div>
+      <div class="modal-sub">Join BiomedConnect AI — free for students</div>
+      <div class="form-group">
+        <label class="form-label">Full Name</label>
+        <input class="form-input" type="text" placeholder="Your Name" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input class="form-input" type="email" placeholder="you@university.edu" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-input" type="password" placeholder="Create a password" />
+      </div>
+      <button class="form-btn" onclick="fakeLogin()">Create Account</button>
+      <div class="modal-toggle">
+        Already have an account? <a onclick="switchModal('login')">Sign In</a>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     GROQ API KEY MODAL
+════════════════════════════════════════════════════════ -->
+<div class="modal-bg hidden" id="apiKeyModalBg" onclick="closeApiKeyModalBg(event)">
+  <div class="modal">
+    <button class="modal-close" onclick="closeApiKeyModal()">✕</button>
+    <div style="font-size:28px;margin-bottom:10px;">🔑</div>
+    <div class="modal-title">Set Your Groq Key</div>
+    <div class="modal-sub" style="margin-bottom:18px;">
+      Enter your <b>Groq API key</b> to enable BiomedConnect AI.<br/>
+      Your key is saved <b>only in your browser</b> (localStorage) — never sent anywhere else.
+    </div>
+    <div class="form-group">
+      <label class="form-label">Groq API Key</label>
+      <input class="form-input" type="password" id="apiKeyInput" placeholder="gsk_..." />
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:14px;line-height:1.7;">
+      Get your <b>FREE</b> key at
+      <span style="color:var(--accent2);">console.groq.com</span> → API Keys<br/>
+      No credit card needed. Key starts with <code style="color:var(--accent);">gsk_</code>
+    </div>
+    <button type="button" class="form-btn form-btn--amber"
+      onclick="saveApiKey()">
+      Save &amp; Activate
+    </button>
+    <div id="apiKeyStatus" style="text-align:center;margin-top:12px;font-size:12px;color:var(--muted);"></div>
+    <div class="modal-toggle" style="margin-top:14px;">
+      <a onclick="clearApiKey()" style="color:var(--red);">Clear saved key</a>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════════════════════ -->
+<script>
+
+  // ─── STATE ────────────────────────────────────────────────────────────────
+  let currentMode = 'general';
+  let conversationHistory = [];
+  let isLoading = false;
+  let currentChatId = null;
+
+  // ─── LOCAL STORAGE DATABASE ───────────────────────────────────────────────
+  // Replaces backend + database for standalone use.
+  // Chats persist in the browser across sessions.
+  const DB = {
+    getChats() {
+      return JSON.parse(localStorage.getItem('bmc_chats') || '[]');
+    },
+    saveChats(chats) {
+      localStorage.setItem('bmc_chats', JSON.stringify(chats));
+    },
+    createChat(firstMessage) {
+      const chats = this.getChats();
+      const id = 'chat_' + Date.now();
+      const title = firstMessage.length > 40
+        ? firstMessage.slice(0, 40) + '…'
+        : firstMessage;
+      chats.unshift({ id, title, createdAt: new Date().toISOString(), messages: [] });
+      this.saveChats(chats);
+      return id;
+    },
+    addMessage(chatId, role, content) {
+      const chats = this.getChats();
+      const chat = chats.find(c => c.id === chatId);
+      if (chat) {
+        chat.messages.push({ role, content, timestamp: new Date().toISOString() });
+        this.saveChats(chats);
+      }
+    },
+    getMessages(chatId) {
+      const chats = this.getChats();
+      const chat = chats.find(c => c.id === chatId);
+      return chat ? chat.messages : [];
+    },
+    deleteChat(chatId) {
+      this.saveChats(this.getChats().filter(c => c.id !== chatId));
+    }
+  };
+
+  // ─── AI SYSTEM PROMPT ─────────────────────────────────────────────────────
+  // This is injected into every Groq API call.
+  // The AI will always identify itself as BiomedConnect AI only.
+  const SYSTEM_PROMPT = `You are BiomedConnect AI, an intelligent assistant designed for biomedical engineering students and professionals.
+
+Your responsibilities include:
+- Explaining biomedical concepts and medical devices
+- Assisting with academic writing and technical reports
+- Helping troubleshoot medical equipment
+- Supporting learning and innovation in healthcare technology
+
+Rules:
+- NEVER mention OpenAI, Gemini, Google, Anthropic, Claude, Groq, Meta, or any external AI provider
+- If asked who made you or what model you are, respond ONLY: "I am part of the BiomedConnect AI platform, developed to support biomedical engineering education and innovation."
+- Always respond professionally and clearly
+- Use structured answers with headers and bullet points when helpful
+- Stay within biomedical and healthcare-related topics
+- Use proper biomedical terminology
+- If unsure, ask for clarification`;
+
+  // ─── MODE PREFIXES ────────────────────────────────────────────────────────
+  // Prepended to user messages based on selected mode tab
+  const MODE_PREFIXES = {
+    general: '',
+    report: 'Please assist with academic/professional report writing. ',
+    device: 'Please provide a detailed technical explanation of this medical device or concept: ',
+    troubleshoot: 'Please provide step-by-step troubleshooting guidance for this biomedical equipment issue: '
+  };
+
+  // ─── INIT ─────────────────────────────────────────────────────────────────
+  const messagesArea = document.getElementById('messagesArea');
+  messagesArea.addEventListener('scroll', () => {
+    const atBottom = messagesArea.scrollHeight - messagesArea.scrollTop < messagesArea.clientHeight + 100;
+    document.getElementById('scrollBtn').classList.toggle('hidden', atBottom);
+  });
+
+  // ─── SIDEBAR RENDERING ────────────────────────────────────────────────────
+  function renderSidebar() {
+    const chats = DB.getChats();
+    const el = document.getElementById('chatHistory');
+    if (chats.length === 0) {
+      el.innerHTML = `<div style="padding:10px 14px;font-size:11px;
+        color:var(--muted);font-family:var(--font-mono);">No saved chats yet.</div>`;
+      return;
+    }
+    el.innerHTML = chats.map(c => `
+      <div class="chat-item ${c.id === currentChatId ? 'active' : ''}"
+           id="item_${c.id}" onclick="loadChat('${c.id}')">
+        <span class="chat-item-icon">💬</span>
+        <span style="flex:1;overflow:hidden;text-overflow:ellipsis">${c.title}</span>
+        <span onclick="event.stopPropagation();deleteChat('${c.id}')"
+          style="opacity:0;font-size:13px;padding:0 2px;color:var(--red);transition:opacity 0.15s"
+          onmouseover="this.style.opacity=1"
+          onmouseout="this.style.opacity=0">✕</span>
+      </div>`).join('');
+  }
+
+  function loadChat(id) {
+    currentChatId = id;
+    conversationHistory = [];
+    document.getElementById('messagesList').innerHTML = '';
+    const ws = document.getElementById('welcomeScreen');
+    if (ws) ws.style.display = 'none';
+
+    DB.getMessages(id).forEach(m => {
+      conversationHistory.push({
+        role: m.role === 'ai' ? 'assistant' : m.role,
+        content: m.content
+      });
+      appendMessage(m.role === 'assistant' ? 'ai' : 'user', m.content, { scroll: 'none' });
+    });
+
+    renderSidebar();
+    scrollToBottom();
+  }
+
+  function deleteChat(id) {
+    DB.deleteChat(id);
+    if (currentChatId === id) newChat();
+    else renderSidebar();
+  }
+
+  // Load sidebar on page start
+  renderSidebar();
+
+  // ─── SEND MESSAGE ─────────────────────────────────────────────────────────
+  async function sendMessage() {
+    const input = document.getElementById('chatInput');
+    const text = input.value.trim();
+    if (!text || isLoading) return;
+
+    hideWelcome();
+    input.value = '';
+    autoResize(input);
+
+    // Create a new chat session if one doesn't exist
+    if (!currentChatId) {
+      currentChatId = DB.createChat(text);
+      renderSidebar();
+    }
+
+    // Add user message to UI and DB
+    appendMessage('user', text);
+    DB.addMessage(currentChatId, 'user', text);
+    conversationHistory.push({ role: 'user', content: MODE_PREFIXES[currentMode] + text });
+
+    // Check API key before calling Groq
+    const apiKey = localStorage.getItem('bmc_api_key');
+    if (!apiKey) {
+      appendMessage('ai',
+        '🔑 **API key required.**\n\nGet a free key at console.groq.com, then use **Set Groq Key** (top bar) or **Groq API key** in the sidebar on desktop. Your key stays only in this browser.',
+        { scroll: 'top' });
+      return;
+    }
+
+    showTyping();
+    setLoading(true);
+
+    // ── GROQ API CALL ──────────────────────────────────────
+    // Groq supports CORS from browser — no proxy needed!
+    // Free tier, no credit card. Get key at console.groq.com
+    const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
+
+    const groqMessages = [
+      { role: 'system', content: SYSTEM_PROMPT },
+      ...conversationHistory
+    ];
+
+    try {
+      const response = await fetch(GROQ_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + apiKey
+        },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile', // Free, fast, very capable model
+          max_tokens: 1024,
+          messages: groqMessages,
+          temperature: 0.7
+        })
+      });
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData?.error?.message || 'HTTP ' + response.status);
+      }
+
+      const data = await response.json();
+      const aiText = data?.choices?.[0]?.message?.content
+        || 'I encountered an issue generating a response. Please try again.';
+
+      hideTyping();
+      appendMessage('ai', aiText, { scroll: 'top' });
+      DB.addMessage(currentChatId, 'assistant', aiText);
+      conversationHistory.push({ role: 'assistant', content: aiText });
+
+    } catch (err) {
+      hideTyping();
+      const msg = err.message || '';
+      if (msg.includes('401') || msg.toLowerCase().includes('invalid') || msg.toLowerCase().includes('auth')) {
+        appendMessage('ai', '🔑 **Invalid API key.** Use **Groq API key** (sidebar) or widen the window and use **Set Groq Key** — enter a valid key from console.groq.com', { scroll: 'top' });
+      } else {
+        appendMessage('ai', '⚠️ **' + (msg || 'Connection error') + '** — Check your internet and try again.', { scroll: 'top' });
+      }
+    }
+
+    setLoading(false);
+  }
+
+  // ─── APPEND MESSAGE TO UI ─────────────────────────────────────────────────
+  function appendMessage(role, text, options = {}) {
+    const list = document.getElementById('messagesList');
+    const isAI = role === 'ai';
+    const wrapper = document.createElement('div');
+    wrapper.className = `message ${isAI ? '' : 'user'}`;
+    wrapper.innerHTML = `
+      <div class="msg-avatar ${isAI ? 'ai' : 'user-av'}">${isAI ? '🧬' : '👤'}</div>
+      <div class="msg-body">
+        <div class="msg-role">${isAI ? 'BiomedConnect AI' : 'You'}</div>
+        <div class="msg-bubble ${isAI ? 'ai-bubble' : 'user-bubble'}">${formatText(text)}</div>
+      </div>`;
+    list.appendChild(wrapper);
+    if (options.scroll === 'top') {
+      scrollMessageToTop(wrapper);
+      return;
+    }
+    if (options.scroll !== 'none') {
+      scrollToBottom();
+    }
+  }
+
+  // ─── MARKDOWN-LIKE TEXT FORMATTER ────────────────────────────────────────
+  function formatText(text) {
+    return text
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      .replace(/`([^`]+)`/g, '<code>$1</code>')
+      .replace(/^### (.+)$/gm, '<h4 style="color:var(--accent);margin:10px 0 4px;font-size:13px;">$1</h4>')
+      .replace(/^## (.+)$/gm, '<h3 style="color:var(--text);margin:12px 0 5px;font-size:14px;font-weight:700;">$1</h3>')
+      .replace(/^# (.+)$/gm, '<h2 style="color:var(--accent);margin:14px 0 6px;font-size:16px;font-weight:800;">$1</h2>')
+      .replace(/^[\-\*] (.+)$/gm, '<li>$1</li>')
+      .replace(/(<li>.*<\/li>)/gs, m => `<ul style="margin:6px 0">${m}</ul>`)
+      .replace(/\n\n/g, '<br/><br/>')
+      .replace(/\n/g, '<br/>');
+  }
+
+  // ─── TYPING INDICATOR ─────────────────────────────────────────────────────
+  function showTyping() {
+    document.getElementById('typingMsg').classList.remove('hidden');
+    scrollToBottom();
+  }
+  function hideTyping() {
+    document.getElementById('typingMsg').classList.add('hidden');
+  }
+
+  // ─── UTILITY FUNCTIONS ────────────────────────────────────────────────────
+  function setLoading(v) {
+    isLoading = v;
+    document.getElementById('sendBtn').disabled = v;
+    document.getElementById('chatInput').disabled = v;
+  }
+
+  function hideWelcome() {
+    const w = document.getElementById('welcomeScreen');
+    if (w) w.style.display = 'none';
+  }
+
+  function scrollToBottom() {
+    setTimeout(() => messagesArea.scrollTop = messagesArea.scrollHeight, 50);
+  }
+
+  function scrollMessageToTop(messageEl) {
+    setTimeout(() => {
+      const messageTop = messageEl.getBoundingClientRect().top
+        - messagesArea.getBoundingClientRect().top
+        + messagesArea.scrollTop;
+      messagesArea.scrollTop = Math.max(0, messageTop - 12);
+    }, 50);
+  }
+
+  function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 160) + 'px';
+  }
+
+  function handleKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  }
+
+  function usePrompt(text) {
+    const input = document.getElementById('chatInput');
+    input.value = text;
+    autoResize(input);
+    input.focus();
+  }
+
+  function setMode(el, mode) {
+    document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    currentMode = mode;
+    const placeholders = {
+      general: 'Ask anything about biomedical engineering...',
+      report: 'Describe the report topic you need help with...',
+      device: 'Name a medical device to explain in detail...',
+      troubleshoot: 'Describe the equipment issue or alarm...'
+    };
+    document.getElementById('chatInput').placeholder = placeholders[mode];
+  }
+
+  function newChat() {
+    currentChatId = null;
+    conversationHistory = [];
+    document.getElementById('messagesList').innerHTML = '';
+    const w = document.getElementById('welcomeScreen');
+    if (w) w.style.display = '';
+    document.getElementById('chatInput').value = '';
+    renderSidebar();
+  }
+
+  // ─── AUTH MODAL ───────────────────────────────────────────────────────────
+  function openModal(type) {
+    document.getElementById('modalBg').classList.remove('hidden');
+    document.getElementById('loginForm').classList.toggle('hidden', type !== 'login');
+    document.getElementById('registerForm').classList.toggle('hidden', type !== 'register');
+  }
+  function closeModal() { document.getElementById('modalBg').classList.add('hidden'); }
+  function closeModalBg(e) { if (e.target.id === 'modalBg') closeModal(); }
+  function switchModal(type) {
+    document.getElementById('loginForm').classList.toggle('hidden', type !== 'login');
+    document.getElementById('registerForm').classList.toggle('hidden', type !== 'register');
+  }
+  function fakeLogin() {
+    closeModal();
+    document.querySelector('.user-name').textContent = 'BME Student';
+    document.querySelector('.user-role').textContent = 'Biomedical Engineer';
+    document.querySelector('.user-avatar').textContent = 'BS';
+  }
+
+  // ─── API KEY MODAL ────────────────────────────────────────────────────────
+  function syncApiKeyHeaderButton() {
+    const btn = document.getElementById('apiKeyBtn');
+    if (!btn) return;
+    const k = localStorage.getItem('bmc_api_key');
+    if (k) {
+      btn.classList.add('hidden');
+      btn.classList.remove('topbar-btn--key-needed');
+    } else {
+      btn.classList.remove('hidden');
+      btn.classList.add('topbar-btn--key-needed');
+    }
+  }
+  syncApiKeyHeaderButton();
+
+  function openApiKeyModal() {
+    const k = localStorage.getItem('bmc_api_key');
+    document.getElementById('apiKeyInput').value = k || '';
+    document.getElementById('apiKeyStatus').textContent = k ? '✅ A key is currently saved.' : '';
+    document.getElementById('apiKeyModalBg').classList.remove('hidden');
+  }
+  function closeApiKeyModal() {
+    document.getElementById('apiKeyModalBg').classList.add('hidden');
+  }
+  function closeApiKeyModalBg(e) {
+    if (e.target.id === 'apiKeyModalBg') closeApiKeyModal();
+  }
+  function saveApiKey() {
+    const val = document.getElementById('apiKeyInput').value.trim();
+    if (!val || !val.startsWith('gsk_')) {
+      document.getElementById('apiKeyStatus').innerHTML =
+        '<span style="color:var(--red);">⚠️ Key must start with gsk_</span>';
+      return;
+    }
+    localStorage.setItem('bmc_api_key', val);
+    document.getElementById('apiKeyStatus').innerHTML =
+      '<span style="color:var(--accent);">✅ Key saved!</span>';
+    syncApiKeyHeaderButton();
+    setTimeout(closeApiKeyModal, 800);
+  }
+  function clearApiKey() {
+    localStorage.removeItem('bmc_api_key');
+    document.getElementById('apiKeyInput').value = '';
+    document.getElementById('apiKeyStatus').innerHTML =
+      '<span style="color:var(--red);">🗑 Key cleared.</span>';
+    syncApiKeyHeaderButton();
+  }
+
+</script>
+</body>
+</html>
