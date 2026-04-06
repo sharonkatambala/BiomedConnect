@@ -27,7 +27,10 @@ class Settings(BaseSettings):
 
     @property
     def cors_origins(self) -> list[str]:
-        return [origin.strip() for origin in self.frontend_origins.split(",") if origin.strip()]
+        origins = [origin.strip() for origin in self.frontend_origins.split(",") if origin.strip()]
+        if origins == ["*"]:
+            return ["*"]
+        return origins
 
 
 @lru_cache(maxsize=1)

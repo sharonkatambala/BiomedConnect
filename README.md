@@ -78,6 +78,7 @@ This project is easiest to deploy as one GitHub repository connected to two Verc
 - `ENVIRONMENT=production`
 - `FRONTEND_ORIGINS`
   Use your deployed frontend URL, for example: `https://your-frontend-project.vercel.app`
+  This is required so the backend returns `Access-Control-Allow-Origin` for browser requests.
 - `SUPABASE_URL`
 - `SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
