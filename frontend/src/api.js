@@ -3,7 +3,16 @@ import { supabase } from "./supabase.js";
 function apiBaseUrl() {
   const fromEnv = import.meta.env.VITE_API_BASE_URL?.trim();
   if (fromEnv) {
-    return fromEnv.replace(/\/$/, "");
+    const normalized = fromEnv.replace(/\/$/, "");
+    try {
+      const url = new URL(normalized);
+      if (url.pathname === "" || url.pathname === "/") {
+        return `${normalized}/api`;
+      }
+    } catch {
+      // Relative paths like /api are already explicit enough.
+    }
+    return normalized;
   }
   if (import.meta.env.DEV) {
     return "/api";
@@ -41,10 +50,15 @@ async function request(path, options = {}) {
     );
   }
 
-  const response = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers: await buildHeaders(options.headers)
-  });
+  let response;
+  try {
+    response = await fetch(`${API_BASE}${path}`, {
+      ...options,
+      headers: await buildHeaders(options.headers)
+    });
+  } catch {
+    throw new Error(`Could not reach the API at ${API_BASE}. Check that the backend deployment is live and VITE_API_BASE_URL is correct.`);
+  }
 
   const text = await response.text();
   let payload = null;
