@@ -22,6 +22,16 @@ BEGIN
       AND column_name = 'user_id'
       AND data_type <> 'uuid'
   ) THEN
+    IF EXISTS (
+      SELECT 1
+      FROM pg_policies
+      WHERE schemaname = 'public'
+        AND tablename = 'community_posts'
+        AND policyname = 'community_posts_insert_own'
+    ) THEN
+      DROP POLICY "community_posts_insert_own" ON public.community_posts;
+    END IF;
+
     ALTER TABLE public.community_posts
     ALTER COLUMN user_id TYPE UUID
     USING user_id::uuid;
