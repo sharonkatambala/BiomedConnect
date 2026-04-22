@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+.venv/
+.venv*/
+backend/.venv2/
+venv/
+ENV/
+
+# Local SQLite (dev)
+backend/community.db
+*.db
+
+# Node / Vite
+node_modules/
+dist/
+frontend/dist/
+.npm-cache/
+
+# Env (keep *.example)
+.env
+.env.*
+!.env.example
+frontend/.env
+backend/.env
+
+# Vercel / IDE
+.vercel
+.idea
+.vscode
+
+# Misc
+*.log
+BiomedConnect_.html

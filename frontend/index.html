@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0f766e" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <title>BiomedConnect AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+      <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet"
+      />
+  </head>
+  <body>
+    <div class="app-shell view-chat" id="appShell">
+      <div class="sidebar-scrim hidden" id="sidebarScrim"></div>
+
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-logo-section">
+          <div class="sidebar-header-row">
+            <div class="sidebar-logo">
+              <div class="logo-badge">
+                <div class="logo-icon">🧬</div>
+                <div class="logo-text-block">
+                  <div class="logo-text">Biomed<span>Connect</span> AI</div>
+                  <div class="logo-sub">Biomedical Intelligence</div>
+                </div>
+              </div>
+            </div>
+            <button
+              class="sidebar-rail-btn"
+              id="sidebarRailBtn"
+              type="button"
+              aria-expanded="true"
+              aria-controls="sidebar"
+              aria-label="Hide sidebar"
+              title="Hide sidebar"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v11a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5v-11Z" stroke="currentColor" stroke-width="2" opacity="0.55"/>
+                <path d="M9 4v16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="sidebar-actions-section">
+          <div class="sidebar-actions">
+            <button class="sidebar-action" id="newChatBtn" type="button">
+              <span class="sidebar-action-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+              </span>
+              <span class="sidebar-action-text">New chat</span>
+            </button>
+            <button class="sidebar-action" id="sidebarSearchBtn" type="button">
+              <span class="sidebar-action-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M10.8 18.1a7.3 7.3 0 1 1 0-14.6 7.3 7.3 0 0 1 0 14.6Z" stroke="currentColor" stroke-width="2"/>
+                  <path d="M16.4 16.4 21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+              </span>
+              <span class="sidebar-action-text">Search</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="sidebar-scroll">
+          <div class="sidebar-section-label">Community chats</div>
+          <div class="community-nav">
+            <button class="chat-item" id="btnDiscussion" type="button" aria-label="Discussion Panel">
+              <span class="chat-item-icon">👥</span>
+              <span class="chat-item-text"><span class="chat-item-title">Discussion Panel</span></span>
+            </button>
+            <button class="chat-item" id="btnExpertQna" type="button" aria-label="Expert Q&A">
+              <span class="chat-item-icon">💡</span>
+              <span class="chat-item-text"><span class="chat-item-title">Expert Q&A</span></span>
+            </button>
+          </div>
+
+          <div class="sidebar-recents-section">
+            <div class="sidebar-section-title">Recents</div>
+            <div class="chat-history" id="chatHistory"></div>
+          </div>
+        </div>
+
+        <div class="sidebar-footer">
+          <button class="user-card" id="userCard" type="button">
+            <div class="user-avatar" id="userAvatar">GU</div>
+            <div class="user-info">
+              <div class="user-name" id="userName">Guest User</div>
+              <div class="user-role" id="userRole">Sign in to save chats</div>
+            </div>
+          </button>
+        </div>
+      </aside>
+
+      <button
+        type="button"
+        class="sidebar-expand-btn"
+        id="sidebarExpandBtn"
+        aria-label="Show sidebar"
+        title="Show sidebar"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v11a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5v-11Z" stroke="currentColor" stroke-width="2" opacity="0.55"/>
+          <path d="M9 4v16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+
+      <main class="main">
+        <div class="topbar">
+          <div class="topbar-left">
+            <button class="topbar-icon-btn mobile-only" id="sidebarToggle" type="button" aria-label="Open menu">
+              ☰
+            </button>
+            <div class="status-dot" aria-hidden="true"></div>
+            <div class="topbar-title-group">
+              <div class="topbar-title" id="mainHeaderTitle">Chats</div>
+              <div class="chat-header-dropdown hidden" id="chatHeaderContainer">
+                <button class="chat-header-btn" id="chatHeaderTitleBtn" type="button">
+                  <span class="chat-header-title-stack">
+                    <span class="chat-header-title-text" id="currentChatTitleDisplay">New chat</span>
+                    <span class="chat-header-subtitle" id="currentChatSubtitleDisplay"></span>
+                  </span>
+                  <span class="dropdown-chevron" aria-hidden="true">
+                    <svg viewBox="0 0 20 20" width="18" height="18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M5.5 7.5 10 12l4.5-4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </span>
+                </button>
+                <div class="dropdown-menu hidden" id="chatDropdownMenu">
+                  <button class="dropdown-item" id="btnStarChat">
+                    <span class="item-icon">⭐</span> Star
+                  </button>
+                  <button class="dropdown-item" id="btnRenameChat">
+                    <span class="item-icon">✏️</span> Rename
+                  </button>
+                  <button class="dropdown-item danger" id="btnDeleteChatTop">
+                    <span class="item-icon">🗑️</span> Delete
+                  </button>
+                </div>
+              </div>
+              <span class="sr-only" id="statusPillText">Ready</span>
+            </div>
+          </div>
+
+          <div class="topbar-actions">
+            <button class="topbar-btn" id="signInBtn" type="button">Sign In</button>
+            <button class="topbar-btn topbar-btn--accent-outline" id="registerBtn" type="button">Register</button>
+            <button class="topbar-btn hidden" id="signOutBtn" type="button">Sign Out</button>
+          </div>
+        </div>
+
+        <div class="messages-area" id="messagesArea">
+          <div class="msg-wrapper">
+            <section class="welcome-screen" id="welcomeScreen">
+              <div class="welcome-icon">🧬</div>
+              <h1 class="welcome-title">
+                Welcome to <span>BiomedConnect AI</span>
+              </h1>
+              <p class="welcome-desc">
+                Your intelligent assistant for biomedical engineering.<br />
+                Ask questions, write reports, explain devices, troubleshoot equipment.
+              </p>
+
+              <div class="prompt-grid">
+                <button
+                  class="prompt-card"
+                  type="button"
+                  data-prompt="Explain how an electrocardiogram (ECG) machine works and what each wave represents."
+                >
+                  <div class="prompt-card-icon">🫀</div>
+                  <div class="prompt-card-title">Explain a Medical Device</div>
+                  <div class="prompt-card-desc">Get detailed breakdowns of medical equipment and biomedical systems.</div>
+                </button>
+
+                <button
+                  class="prompt-card"
+                  type="button"
+                  data-prompt="Help me write a professional report on MRI technology, covering principles, clinical applications, and safety considerations."
+                >
+                  <div class="prompt-card-icon">📝</div>
+                  <div class="prompt-card-title">Write a Report</div>
+                  <div class="prompt-card-desc">Academic and professional writing assistance for biomedical topics.</div>
+                </button>
+
+                <button
+                  class="prompt-card"
+                  type="button"
+                  data-prompt="A patient ventilator is showing a high-pressure alarm. Walk me through the troubleshooting steps."
+                >
+                  <div class="prompt-card-icon">🔧</div>
+                  <div class="prompt-card-title">Troubleshoot Equipment</div>
+                  <div class="prompt-card-desc">Step-by-step diagnostics for medical equipment issues.</div>
+                </button>
+
+                <button
+                  class="prompt-card"
+                  type="button"
+                  data-prompt="Explain the biomedical engineering principles behind pacemakers and how they sense and treat arrhythmias."
+                >
+                  <div class="prompt-card-icon">⚡</div>
+                  <div class="prompt-card-title">Biomedical Concepts</div>
+                  <div class="prompt-card-desc">Deep dives into physiology, engineering, and healthcare technology.</div>
+                </button>
+              </div>
+            </section>
+
+            <div class="community-view hidden" id="communityView">
+              <div class="community-header">
+                <div class="community-icon" id="communityIcon">👥</div>
+                <div>
+                  <h2 id="communityTitle">Discussion Panel</h2>
+                  <p id="communityDesc">Discuss various matters regarding biomedical engineering.</p>
+                </div>
+              </div>
+              <div class="community-feed" id="communityFeed"></div>
+            </div>
+
+            <div id="messagesList"></div>
+
+            <div class="message hidden" id="typingMsg">
+              <div class="msg-avatar ai">🧬</div>
+              <div class="msg-body">
+                <div class="msg-role">BiomedConnect AI</div>
+                <div class="typing-indicator">
+                  <div class="typing-dot"></div>
+                  <div class="typing-dot"></div>
+                  <div class="typing-dot"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button class="scroll-btn hidden" id="scrollBtn" type="button" aria-label="Scroll to latest message">↓</button>
+
+        <div class="input-area">
+          <div class="input-container">
+            <div class="mode-tabs" id="modeTabs">
+              <button class="mode-tab active" data-mode="general" type="button">💬 General</button>
+              <button class="mode-tab" data-mode="report" type="button">📝 Report Writing</button>
+              <button class="mode-tab" data-mode="device" type="button">🩺 Device Explainer</button>
+              <button class="mode-tab" data-mode="troubleshoot" type="button">🔧 Troubleshoot</button>
+            </div>
+
+            <div class="input-box">
+              <textarea id="chatInput" rows="1" placeholder="Ask anything about biomedical engineering..."></textarea>
+              <button class="send-btn" id="sendBtn" type="button" aria-label="Send message">➤</button>
+            </div>
+
+            <div class="input-meta">
+              <div class="input-hint" id="inputHint">
+                AI responses may be inaccurate. Verify important biomedical information.
+              </div>
+              <div class="auth-chip hidden" id="authChip">Guest mode</div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <div class="modal-bg chat-search-modal-bg hidden" id="chatSearchModalBg" aria-hidden="true">
+      <div class="modal modal--chat-search" role="dialog" aria-modal="true" aria-labelledby="chatSearchModalTitle">
+        <h2 class="sr-only" id="chatSearchModalTitle">Search chats</h2>
+        <div class="chat-search-modal-head">
+          <div class="chat-search-modal-field">
+            <span class="chat-search-modal-search-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M10.8 18.1a7.3 7.3 0 1 1 0-14.6 7.3 7.3 0 0 1 0 14.6Z" stroke="currentColor" stroke-width="2"/>
+                <path d="M16.4 16.4 21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </span>
+            <input
+              type="search"
+              id="chatSearchModalInput"
+              class="chat-search-modal-input"
+              placeholder="Search chats"
+              autocomplete="off"
+              spellcheck="false"
+            />
+          </div>
+          <button type="button" class="chat-search-modal-close" id="chatSearchModalClose" aria-label="Close search">×</button>
+        </div>
+        <div class="chat-search-modal-body">
+          <div class="chat-search-modal-list" id="chatSearchModalList"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-bg rename-modal-bg hidden" id="renameModalBg" aria-hidden="true">
+      <div class="modal modal--rename" role="dialog" aria-modal="true" aria-labelledby="renameModalTitle">
+        <h2 class="modal-title modal-title--rename" id="renameModalTitle">Rename conversation</h2>
+        <div class="form-group rename-modal-field">
+          <label class="sr-only" for="renameChatInput">Conversation title</label>
+          <input class="form-input rename-modal-input" type="text" id="renameChatInput" maxlength="200" autocomplete="off" />
+        </div>
+        <div class="rename-modal-actions">
+          <button type="button" class="btn-modal-secondary" id="renameCancelBtn">Cancel</button>
+          <button type="button" class="btn-modal-primary" id="renameSaveBtn">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-bg hidden" id="modalBg">
+      <div class="modal">
+        <button class="modal-close" id="modalCloseBtn" type="button" aria-label="Close dialog">✕</button>
+
+        <form id="loginForm" novalidate>
+          <div class="modal-title">Welcome back</div>
+          <div class="modal-sub">Sign in to save your conversations</div>
+
+          <div class="form-group">
+            <label class="form-label" for="loginEmail">Email</label>
+            <input class="form-input" id="loginEmail" type="email" placeholder="you@university.edu" required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="loginPassword">Password</label>
+            <input class="form-input" id="loginPassword" type="password" placeholder="••••••••" required />
+          </div>
+
+          <div class="form-status" id="loginStatus"></div>
+          <button class="form-btn" id="loginSubmitBtn" type="submit">Sign In</button>
+
+          <div class="modal-toggle">
+            Don't have an account?
+            <button class="modal-link" id="showRegisterBtn" type="button">Register</button>
+          </div>
+        </form>
+
+        <form id="registerForm" class="hidden" novalidate>
+          <div class="modal-title">Create Account</div>
+          <div class="modal-sub">Join BiomedConnect AI and save your conversations</div>
+
+          <div class="form-group">
+            <label class="form-label" for="registerName">Full Name</label>
+            <input class="form-input" id="registerName" type="text" placeholder="Your Name" required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="registerEmail">Email</label>
+            <input class="form-input" id="registerEmail" type="email" placeholder="you@university.edu" required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="registerPassword">Password</label>
+            <input class="form-input" id="registerPassword" type="password" placeholder="Create a password" required />
+          </div>
+
+          <div class="form-status" id="registerStatus"></div>
+          <button class="form-btn" id="registerSubmitBtn" type="submit">Create Account</button>
+
+          <div class="modal-toggle">
+            Already have an account?
+            <button class="modal-link" id="showLoginBtn" type="button">Sign In</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
