@@ -10,6 +10,24 @@ CREATE TABLE IF NOT EXISTS public.community_posts (
   created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc', now())
 );
 
+-- If this table already existed from an older version, normalize user_id
+-- from TEXT to UUID before creating policies that compare against auth.uid().
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'community_posts'
+      AND column_name = 'user_id'
+      AND data_type <> 'uuid'
+  ) THEN
+    ALTER TABLE public.community_posts
+    ALTER COLUMN user_id TYPE UUID
+    USING user_id::uuid;
+  END IF;
+END $$;
+
 CREATE INDEX IF NOT EXISTS community_posts_room_created_at_idx
 ON public.community_posts (room, created_at ASC);
 

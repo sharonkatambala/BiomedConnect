@@ -41,6 +41,22 @@ create table if not exists public.community_posts (
   created_at timestamptz not null default timezone('utc', now())
 );
 
+do $$
+begin
+  if exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'community_posts'
+      and column_name = 'user_id'
+      and data_type <> 'uuid'
+  ) then
+    alter table public.community_posts
+    alter column user_id type uuid
+    using user_id::uuid;
+  end if;
+end $$;
+
 create index if not exists chats_user_id_updated_at_idx on public.chats (user_id, updated_at desc);
 create index if not exists messages_chat_id_created_at_idx on public.messages (chat_id, created_at asc);
 create index if not exists community_posts_room_created_at_idx on public.community_posts (room, created_at asc);
