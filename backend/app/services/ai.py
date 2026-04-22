@@ -37,6 +37,7 @@ Answer YES when the latest user message (with conversation context) is about:
 Answer NO when the request is primarily about topics with no meaningful link to healthcare or biomedical technology, such as:
 - General world history, wars, unrelated geography, sports, celebrities, pure entertainment
 - General programming/AI/math with no healthcare or biomedical angle when the user is not in an established biomedical thread
+- Standalone greetings or casual chat with no biomedical/healthcare context, such as "hi", "hello", or "how are you"
 
 If unsure, prefer NO.
 
@@ -80,6 +81,13 @@ _HISTORY_OR_GENERAL_OFF = re.compile(
     re.I,
 )
 
+_FOLLOW_UP_RE = re.compile(
+    r"^(thanks|thank you|ok|okay|sure|continue|go on|explain more|tell me more|"
+    r"more details?|please continue|what about(?: the)? [\w\s-]+\??|"
+    r"and what about[\w\s-]*|can you expand(?: on)? that\??)\W*$",
+    re.I,
+)
+
 
 def _latest_user_content(chat_messages: list[dict]) -> str:
     for turn in reversed(chat_messages):
@@ -99,6 +107,27 @@ def quick_off_topic_reject(latest_user: str) -> bool:
     if _BIO_ANCHOR.search(text):
         return False
     return bool(_HISTORY_OR_GENERAL_OFF.search(text))
+
+
+def _has_biomedical_context(chat_messages: list[dict]) -> bool:
+    for turn in reversed(chat_messages[:-1]):
+        content = str(turn.get("content") or "")
+        if _BIO_ANCHOR.search(content):
+            return True
+    return False
+
+
+def heuristic_domain_relevance(chat_messages: list[dict]) -> bool:
+    latest = _latest_user_content(chat_messages).strip()
+    if not latest:
+        return False
+    if quick_off_topic_reject(latest):
+        return False
+    if _BIO_ANCHOR.search(latest):
+        return True
+    if _FOLLOW_UP_RE.match(latest) and _has_biomedical_context(chat_messages):
+        return True
+    return False
 
 
 def _format_classifier_transcript(chat_messages: list[dict], max_chars: int = 1200) -> str:
@@ -131,12 +160,14 @@ def _parse_yes_no(raw: str) -> bool | None:
 async def classify_domain_relevance(chat_messages: list[dict]) -> bool:
     """
     Returns True if the latest user turn is in scope for BiomedConnect (biomedical / healthcare / related tech).
-    Uses a fast keyword gate first, then a small LLM. On LLM HTTP errors only, returns True (fail open).
-    On empty or unparseable classifier text, returns False (fail closed) so off-topic questions do not leak through.
+    Uses a fast heuristic gate first, then a small LLM for harder cases.
+    On missing classifier output or HTTP errors, returns False (fail closed) so off-topic questions do not leak through.
     """
     settings = get_settings()
-    if not settings.groq_api_key:
+    if heuristic_domain_relevance(chat_messages):
         return True
+    if not settings.groq_api_key:
+        return False
 
     latest = _latest_user_content(chat_messages)
     if quick_off_topic_reject(latest):
@@ -144,7 +175,7 @@ async def classify_domain_relevance(chat_messages: list[dict]) -> bool:
 
     transcript = _format_classifier_transcript(chat_messages)
     if not transcript.strip():
-        return True
+        return False
 
     model = (settings.groq_classifier_model or "").strip() or settings.groq_model
 
@@ -173,7 +204,7 @@ async def classify_domain_relevance(chat_messages: list[dict]) -> bool:
         )
 
     if response.status_code >= 400:
-        return True
+        return False
 
     payload = response.json()
     content = payload.get("choices", [{}])[0].get("message", {}).get("content") or ""

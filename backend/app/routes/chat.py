@@ -1,5 +1,4 @@
 import random
-import re
 
 from fastapi import APIRouter, Depends
 
@@ -15,7 +14,6 @@ from app.schemas import (
 from app.services.ai import classify_domain_relevance, generate_ai_reply
 from app.services.auth import AuthenticatedUser, get_current_user
 from app.services.db import (
-    build_preview,
     create_chat,
     delete_chat,
     get_chat,
@@ -28,24 +26,45 @@ from app.services.db import (
 
 router = APIRouter(prefix="/api", tags=["chat"])
 
-WHO_MADE_YOU_RE = re.compile(
-    r"^(who\s+(made|created|built|developed)\s+you|who\s+are\s+you\s+made\s+by|who\s+is\s+your\s+creator)\??$",
-    re.IGNORECASE,
-)
-
-WHO_MADE_YOU_RESPONSES = [
-    "I was created by biomedical engineers and AI developers to support learning and innovation in healthcare.",
-    "I was built by a team of biomedical engineers and AI developers to help with healthcare and biomedical knowledge.",
-    "I was created by biomedical engineers using AI technology.",
-    "I was developed by biomedical engineers and AI experts to assist with healthcare and biomedical information.",
+OFF_TOPIC_OPENERS = [
+    "I can help with biomedical engineering, healthcare, medical devices, health technology, and AI used in those areas.",
+    "This assistant is focused on biomedical engineering, clinical technology, healthcare systems, and related health AI topics.",
+    "I am limited to biomedical engineering, healthcare, medical devices, and closely related health technology questions.",
+    "My scope is biomedical engineering, healthcare, medical technology, and AI connected to those fields.",
 ]
 
-OFF_TOPIC_RESPONSES = [
-    "I'm designed to focus on biomedical engineering, healthcare technology, AI, and related fields. I may not provide detailed answers on that topic, but I'd be happy to help with anything related to healthcare or technology.",
-    "That's an interesting question! However, I mainly specialize in biomedical engineering, AI, and healthcare-related topics. Feel free to ask me anything in those areas 😊",
-    "I focus on biomedical engineering, AI, and healthcare topics. Please ask something related to those areas.",
-    "I'm specialized in healthcare, biomedical engineering, and AI. I may not cover that topic, but I can help explain how technology and AI are used in healthcare if you're interested.",
+OFF_TOPIC_EXAMPLES = [
+    "How does an MRI scanner produce images?",
+    "What causes a ventilator high-pressure alarm?",
+    "Explain ECG lead placement and common mistakes.",
+    "How is AI used in radiology workflows?",
+    "What are the safety checks for an infusion pump?",
+    "How does a pulse oximeter estimate oxygen saturation?",
+    "What does FDA Class II mean for a medical device?",
+    "How do biomedical engineers maintain hospital equipment?",
 ]
+
+OFF_TOPIC_CLOSERS = [
+    "If you want, ask me a biomedical or healthcare technology question and I will jump straight in.",
+    "Try one of the example questions below, or send any biomedical engineering topic you want explained.",
+    "I will be most useful if you keep the question within biomedical engineering or healthcare technology.",
+]
+
+
+def build_off_topic_response() -> str:
+    examples = random.sample(OFF_TOPIC_EXAMPLES, k=3)
+    opener = random.choice(OFF_TOPIC_OPENERS)
+    closing = random.choice(OFF_TOPIC_CLOSERS)
+    return (
+        f"{opener}\n\n"
+        "Please ask about biomedical engineering, health, healthcare, medical devices, health technology, "
+        "or AI applied to those areas.\n\n"
+        "You could ask:\n"
+        f"- {examples[0]}\n"
+        f"- {examples[1]}\n"
+        f"- {examples[2]}\n\n"
+        f"{closing}"
+    )
 
 
 @router.get("/chats", response_model=list[ChatSummary])
@@ -96,13 +115,10 @@ async def chat(request: ChatRequest, current_user: AuthenticatedUser = Depends(g
         mode = request.mode
         history = []
 
-    normalized = " ".join((request.message or "").strip().split())
     messages_for_model = history + [{"role": "user", "content": request.message}]
 
-    if WHO_MADE_YOU_RE.match(normalized):
-        assistant_text = random.choice(WHO_MADE_YOU_RESPONSES)
-    elif not await classify_domain_relevance(messages_for_model):
-        assistant_text = random.choice(OFF_TOPIC_RESPONSES)
+    if not await classify_domain_relevance(messages_for_model):
+        assistant_text = build_off_topic_response()
     else:
         assistant_text = await generate_ai_reply(messages_for_model, mode)
 

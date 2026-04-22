@@ -22,12 +22,15 @@ const state = {
   currentChatId: null,
   chats: [],
   messages: [],
+  chatMessagesCache: new Map(),
   session: null,
   profile: null,
   isLoading: false,
   activeView: "chat",
   currentCommunityRoom: null,
   communityPosts: [],
+  chatLoadSeq: 0,
+  communityLoadSeq: 0,
   searchModalQuery: "",
   searchModalRenderTimer: null,
   renameChatId: null,
@@ -353,6 +356,9 @@ async function applySession(session) {
     state.chats = [];
     state.currentChatId = null;
     state.messages = [];
+    state.chatMessagesCache.clear();
+    state.chatLoadSeq += 1;
+    state.communityLoadSeq += 1;
     state.searchModalQuery = "";
     if (ui.chatSearchModalInput) {
       ui.chatSearchModalInput.value = "";
@@ -378,6 +384,7 @@ async function applySession(session) {
     state.chats = await api.listChats();
     console.log("Successfully loaded chats:", state.chats.length, "chats");
     renderSidebar();
+    warmChatCache();
     updateAuthControls();
     syncShellView();
     ui.mainHeaderTitle.classList.add("hidden");
@@ -399,7 +406,94 @@ function setMode(mode) {
   ui.modeTabs.forEach((tab) => {
     tab.classList.toggle("active", tab.dataset.mode === mode);
   });
-  ui.chatInput.placeholder = MODE_CONFIG[mode]?.placeholder || MODE_CONFIG.general.placeholder;
+  if (state.activeView !== "community") {
+    setChatInputPlaceholder();
+  }
+}
+
+function setChatInputPlaceholder() {
+  ui.chatInput.placeholder = MODE_CONFIG[state.currentMode]?.placeholder || MODE_CONFIG.general.placeholder;
+}
+
+function cloneMessages(messages) {
+  return Array.isArray(messages) ? messages.map((message) => ({ ...message })) : [];
+}
+
+function cacheChatMessages(chatId, messages) {
+  if (!chatId) {
+    return;
+  }
+  state.chatMessagesCache.set(chatId, cloneMessages(messages));
+}
+
+function getCachedChatMessages(chatId) {
+  const cached = state.chatMessagesCache.get(chatId);
+  return cached ? cloneMessages(cached) : null;
+}
+
+function getChatSummary(chatId) {
+  return state.chats.find((chat) => chat.id === chatId) || null;
+}
+
+function mergeChatSummary(chatSummary) {
+  if (!chatSummary?.id) {
+    return;
+  }
+  const chatIndex = state.chats.findIndex((chat) => chat.id === chatSummary.id);
+  if (chatIndex >= 0) {
+    state.chats[chatIndex] = {
+      ...state.chats[chatIndex],
+      ...chatSummary
+    };
+  }
+}
+
+function warmChatCache(limit = 3) {
+  if (!state.session) {
+    return;
+  }
+  const chatIds = state.chats
+    .slice(0, limit)
+    .map((chat) => chat.id)
+    .filter((chatId) => chatId && !state.chatMessagesCache.has(chatId));
+
+  chatIds.forEach((chatId) => {
+    void api
+      .getChat(chatId)
+      .then((data) => {
+        if (!state.session || !data?.chat?.id) {
+          return;
+        }
+        cacheChatMessages(data.chat.id, data.messages);
+        mergeChatSummary(data.chat);
+      })
+      .catch(() => {
+        // Ignore background prefetch errors; the user can still open the chat on demand.
+      });
+  });
+}
+
+function enterChatView() {
+  state.activeView = "chat";
+  state.currentCommunityRoom = null;
+  state.communityLoadSeq += 1;
+  ui.communityView.classList.add("hidden");
+  syncShellView();
+  setChatInputPlaceholder();
+}
+
+function renderActiveChat(chatSummary = getChatSummary(state.currentChatId)) {
+  ui.currentChatTitleDisplay.textContent = chatSummary?.title || "Conversation";
+  setChatHeaderSubtitle(chatSummary?.title || "", chatSummary?.preview || "");
+  ui.mainHeaderTitle.classList.add("hidden");
+  ui.chatHeaderContainer.classList.remove("hidden");
+  updateChatHeaderDropdown();
+  hideWelcome();
+  renderMessages();
+  renderSidebar();
+  updateSidebarActiveStates();
+  ui.statusPillText.textContent = "Connected";
+  ui.inputHint.textContent = "AI responses may be inaccurate. Verify important biomedical information.";
 }
 
 function chatSidebarRowHtml(chat) {
@@ -620,7 +714,7 @@ function setChatHeaderSubtitle(title, preview) {
   ui.currentChatSubtitleDisplay.classList.remove("hidden");
 }
 
-async function loadChat(chatId) {
+async function legacyLoadChat(chatId) {
   console.log("loadChat called with chatId:", chatId);
   if (!chatId) {
     console.log("loadChat: No chatId provided, returning");
@@ -690,8 +784,8 @@ async function loadChat(chatId) {
 
 function newChat() {
   console.log("newChat button clicked");
-  state.activeView = "chat";
-  state.currentCommunityRoom = null;
+  state.chatLoadSeq += 1;
+  enterChatView();
   state.currentChatId = null;
   state.messages = [];
   
@@ -713,7 +807,7 @@ function newChat() {
   renderSidebar();
   updateSidebarActiveStates();
   ui.chatInput.value = "";
-  ui.chatInput.placeholder = MODE_CONFIG[state.currentMode]?.placeholder || MODE_CONFIG.general.placeholder;
+  setChatInputPlaceholder();
   autoResize(ui.chatInput);
   closeSidebar();
 }
@@ -780,6 +874,7 @@ async function deleteChat(chatId) {
 
   try {
     await api.deleteChat(chatId);
+    state.chatMessagesCache.delete(chatId);
     state.chats = state.chats.filter((chat) => chat.id !== chatId);
     if (state.currentChatId === chatId) {
       newChat();
@@ -849,6 +944,7 @@ async function sendMessage() {
   };
 
   state.messages.push(userMessage);
+  cacheChatMessages(state.currentChatId, state.messages);
   appendMessage("user", text);
   showTyping();
   setLoading(true);
@@ -865,6 +961,7 @@ async function sendMessage() {
 
     state.currentChatId = response.chat.id;
     state.messages.push(response.assistant_message);
+    cacheChatMessages(response.chat.id, state.messages);
     
     ui.currentChatTitleDisplay.textContent = response.chat.title || "Conversation";
     setChatHeaderSubtitle(response.chat.title, response.chat.preview);
@@ -1132,7 +1229,7 @@ function deriveInitials(value) {
     .join("");
 }
 
-async function loadCommunityRoom(roomId, title, icon, desc) {
+async function legacyLoadCommunityRoom(roomId, title, icon, desc) {
   state.activeView = "community";
   state.currentCommunityRoom = roomId;
   state.communityPosts = [];
@@ -1175,6 +1272,159 @@ async function loadCommunityRoom(roomId, title, icon, desc) {
       ui.inputHint.textContent = "Be respectful and helpful to fellow biomedical engineers.";
     }
   } catch (error) {
+    ui.communityFeed.innerHTML = `
+      <div style="text-align:center; padding: 40px; color: #dc2626; font-size: 14px;">
+        Failed to load messages. Please try again.
+      </div>
+    `;
+    ui.statusPillText.textContent = "Load failed";
+  }
+}
+
+async function loadChat(chatId) {
+  console.log("loadChat called with chatId:", chatId);
+  if (!chatId) {
+    console.log("loadChat: No chatId provided, returning");
+    return;
+  }
+
+  if (!state.session) {
+    openModal("login");
+    setFormStatus(ui.loginStatus, "Sign in to view and continue conversations.", "info");
+    return;
+  }
+
+  const previousChatId = state.currentChatId;
+  const wasCommunityView = state.activeView === "community";
+  const wasSameActiveChat = state.activeView === "chat" && chatId === state.currentChatId;
+  const cachedMessages =
+    chatId === state.currentChatId ? cloneMessages(state.messages) : getCachedChatMessages(chatId);
+  const cachedSummary = getChatSummary(chatId);
+
+  enterChatView();
+  ui.messagesArea.scrollTop = 0;
+
+  if (cachedMessages?.length) {
+    state.currentChatId = chatId;
+    state.messages = cachedMessages;
+    renderActiveChat(cachedSummary);
+    scrollToBottom();
+    closeSidebar();
+    if (wasSameActiveChat || (wasCommunityView && chatId === previousChatId)) {
+      return;
+    }
+  }
+
+  if (!cachedMessages?.length) {
+    ui.currentChatTitleDisplay.textContent = cachedSummary?.title || "Conversation";
+    setChatHeaderSubtitle(cachedSummary?.title || "", cachedSummary?.preview || "");
+    ui.mainHeaderTitle.classList.add("hidden");
+    ui.chatHeaderContainer.classList.remove("hidden");
+    updateChatHeaderDropdown();
+    ui.messagesList.innerHTML = `<div class="view-loading">Loading conversation...</div>`;
+  }
+
+  const loadSeq = ++state.chatLoadSeq;
+
+  try {
+    const data = await api.getChat(chatId);
+    if (loadSeq !== state.chatLoadSeq || state.activeView !== "chat") {
+      return;
+    }
+
+    state.currentChatId = data.chat.id;
+    state.messages = cloneMessages(data.messages);
+    cacheChatMessages(data.chat.id, data.messages);
+    mergeChatSummary(data.chat);
+    renderActiveChat(data.chat);
+    scrollToBottom();
+    closeSidebar();
+  } catch (error) {
+    if (loadSeq !== state.chatLoadSeq) {
+      return;
+    }
+
+    if (cachedMessages?.length) {
+      ui.statusPillText.textContent = "Showing saved chat";
+      ui.inputHint.textContent = `Unable to refresh this conversation right now: ${error.message}`;
+      closeSidebar();
+      return;
+    }
+
+    console.error("Failed to load chat:", error);
+    ui.inputHint.textContent = `Failed to load chat: ${error.message}`;
+    ui.statusPillText.textContent = "Load failed";
+    ui.messagesList.innerHTML = `
+      <div style="text-align: center; padding: 40px; color: #dc2626;">
+        <h3>Failed to load conversation</h3>
+        <p>${error.message}</p>
+        <button onclick="location.reload()" style="margin-top: 16px; padding: 8px 16px; background: var(--accent); color: white; border: none; border-radius: 4px; cursor: pointer;">
+          Reload Page
+        </button>
+      </div>
+    `;
+  }
+}
+
+async function loadCommunityRoom(roomId, title, icon, desc) {
+  const communityLoadSeq = ++state.communityLoadSeq;
+  state.chatLoadSeq += 1;
+  state.activeView = "community";
+  state.currentCommunityRoom = roomId;
+  state.communityPosts = [];
+
+  ui.communityIcon.textContent = icon;
+  ui.communityTitle.textContent = title;
+  ui.communityDesc.textContent = desc;
+  ui.chatInput.placeholder = state.session
+    ? `Message to ${title}...`
+    : `Sign in to post in ${title}...`;
+
+  hideWelcome();
+  ui.messagesList.innerHTML = "";
+  ui.communityView.classList.remove("hidden");
+  ui.mainHeaderTitle.classList.remove("hidden");
+  ui.mainHeaderTitle.textContent = title;
+  ui.chatHeaderContainer.classList.add("hidden");
+  syncShellView();
+  ui.messagesArea.scrollTop = 0;
+
+  ui.communityFeed.innerHTML = `
+    <div style="text-align:center; padding: 40px; color: var(--text-muted); font-size: 14px;">
+      <div style="display:inline-block; animation: typing 1.2s infinite ease-in-out;">Loading messages...</div>
+    </div>
+  `;
+
+  updateSidebarActiveStates();
+  renderSidebar();
+
+  try {
+    const posts = await api.getCommunityPosts(roomId);
+    if (
+      communityLoadSeq !== state.communityLoadSeq ||
+      state.activeView !== "community" ||
+      state.currentCommunityRoom !== roomId
+    ) {
+      return;
+    }
+
+    state.communityPosts = posts;
+    renderCommunityPosts();
+    ui.statusPillText.textContent = "Connected";
+    if (!state.session) {
+      ui.inputHint.textContent = "Sign in to post messages in the community.";
+    } else {
+      ui.inputHint.textContent = "Be respectful and helpful to fellow biomedical engineers.";
+    }
+  } catch (error) {
+    if (
+      communityLoadSeq !== state.communityLoadSeq ||
+      state.activeView !== "community" ||
+      state.currentCommunityRoom !== roomId
+    ) {
+      return;
+    }
+
     ui.communityFeed.innerHTML = `
       <div style="text-align:center; padding: 40px; color: #dc2626; font-size: 14px;">
         Failed to load messages. Please try again.
