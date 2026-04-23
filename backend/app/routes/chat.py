@@ -11,7 +11,7 @@ from app.schemas import (
     DeleteChatResponse,
     UpdateChatRequest,
 )
-from app.services.ai import classify_domain_relevance, generate_ai_reply
+from app.services.ai import classify_domain_relevance, generate_ai_reply, get_simple_response
 from app.services.auth import AuthenticatedUser, get_current_user
 from app.services.db import (
     create_chat,
@@ -26,45 +26,18 @@ from app.services.db import (
 
 router = APIRouter(prefix="/api", tags=["chat"])
 
-OFF_TOPIC_OPENERS = [
-    "I can help with biomedical engineering, healthcare, medical devices, health technology, and AI used in those areas.",
-    "This assistant is focused on biomedical engineering, clinical technology, healthcare systems, and related health AI topics.",
-    "I am limited to biomedical engineering, healthcare, medical devices, and closely related health technology questions.",
-    "My scope is biomedical engineering, healthcare, medical technology, and AI connected to those fields.",
-]
-
-OFF_TOPIC_EXAMPLES = [
-    "How does an MRI scanner produce images?",
-    "What causes a ventilator high-pressure alarm?",
-    "Explain ECG lead placement and common mistakes.",
-    "How is AI used in radiology workflows?",
-    "What are the safety checks for an infusion pump?",
-    "How does a pulse oximeter estimate oxygen saturation?",
-    "What does FDA Class II mean for a medical device?",
-    "How do biomedical engineers maintain hospital equipment?",
-]
-
-OFF_TOPIC_CLOSERS = [
-    "If you want, ask me a biomedical or healthcare technology question and I will jump straight in.",
-    "Try one of the example questions below, or send any biomedical engineering topic you want explained.",
-    "I will be most useful if you keep the question within biomedical engineering or healthcare technology.",
+OFF_TOPIC_RESPONSES = [
+    "I'm focused on biomedical engineering, healthcare, and medical technology. Ask me anything in those areas.",
+    "That topic is outside my scope. I can help with biomedical engineering, healthcare, and medical devices.",
+    "I specialize in biomedical and healthcare topics. Feel free to ask about those.",
+    "I can only assist with biomedical engineering, healthcare, and related health technology. What would you like to know?",
+    "My expertise is in biomedical engineering and healthcare. How can I help you with that?",
+    "I only cover biomedical engineering, healthcare, and medical technology. Ask me something in those fields.",
 ]
 
 
 def build_off_topic_response() -> str:
-    examples = random.sample(OFF_TOPIC_EXAMPLES, k=3)
-    opener = random.choice(OFF_TOPIC_OPENERS)
-    closing = random.choice(OFF_TOPIC_CLOSERS)
-    return (
-        f"{opener}\n\n"
-        "Please ask about biomedical engineering, health, healthcare, medical devices, health technology, "
-        "or AI applied to those areas.\n\n"
-        "You could ask:\n"
-        f"- {examples[0]}\n"
-        f"- {examples[1]}\n"
-        f"- {examples[2]}\n\n"
-        f"{closing}"
-    )
+    return random.choice(OFF_TOPIC_RESPONSES)
 
 
 @router.get("/chats", response_model=list[ChatSummary])
@@ -117,7 +90,10 @@ async def chat(request: ChatRequest, current_user: AuthenticatedUser = Depends(g
 
     messages_for_model = history + [{"role": "user", "content": request.message}]
 
-    if not await classify_domain_relevance(messages_for_model):
+    simple_reply = get_simple_response(request.message)
+    if simple_reply:
+        assistant_text = simple_reply
+    elif not await classify_domain_relevance(messages_for_model):
         assistant_text = build_off_topic_response()
     else:
         assistant_text = await generate_ai_reply(messages_for_model, mode)
